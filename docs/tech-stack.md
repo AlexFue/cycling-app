@@ -34,12 +34,15 @@ The stack is chosen to reflect technologies used in real production environments
 | **Express** | HTTP server and REST API routing framework |
 | **TypeScript** | Static typing on the backend, shared types with the frontend |
 | **Prisma** | ORM for type-safe database queries and schema management |
+| **GraphQL** | Query language used selectively for the explore page where flexible, client-driven data fetching is genuinely beneficial |
 | **BullMQ** | Job queue library for async GPX file generation (runs on top of Redis) |
 | **JWT** | Stateless authentication tokens |
 
 **Why TypeScript on the backend too** — with TypeScript on both sides, API response shapes and shared data types can be defined once and used across the entire codebase. This eliminates a whole class of client/server contract mismatches and is standard practice in production TypeScript monorepos.
 
 **Why Prisma** — Prisma's schema definition maps directly to the ERD and gives you type-safe database queries in TypeScript. It also handles migrations, making schema changes version-controlled and reproducible across environments.
+
+**GraphQL scope** — GraphQL is not used to replace the entire REST API. It is used selectively for the explore page, where different views (route cards, map previews, detail panels) need different subsets of the same route data. GraphQL lets the client request exactly the fields it needs in a single query, avoiding both over-fetching and multiple round trips. All other endpoints (auth, route creation, GPX export, user profile) remain REST.
 
 ---
 
@@ -48,8 +51,11 @@ The stack is chosen to reflect technologies used in real production environments
 | Technology | Purpose |
 |---|---|
 | **PostgreSQL** | Primary relational database for all application data |
+| **Elasticsearch** | Full-text search and filtering engine for the explore page |
 
-PostgreSQL is the most widely used open-source relational database in the industry. It maps directly to the relational ERD designed for this app and is supported natively by every hosting platform used in this stack. Managed for free on Railway.
+**PostgreSQL** is the most widely used open-source relational database in the industry. It maps directly to the relational ERD designed for this app and is supported natively by every hosting platform used in this stack. Managed on Railway.
+
+**Elasticsearch** powers route search and filtering on the explore page — searching by name, filtering by tags, difficulty, and surface type. PostgreSQL can handle basic filtering but Elasticsearch is purpose-built for full-text search and is what production apps use when search quality matters. Route data is synced from PostgreSQL to Elasticsearch when routes are created or updated. Run self-managed (free) via Docker locally and on Railway in production.
 
 ---
 
@@ -93,16 +99,35 @@ Mapbox provides all three map-related capabilities under a single provider and f
 
 ---
 
+## Local Development
+
+| Technology | Purpose |
+|---|---|
+| **Docker** | Containerized local development environment |
+| **Docker Compose** | Runs PostgreSQL, Redis, and Elasticsearch locally with a single command |
+
+Docker eliminates environment inconsistencies between local development and production. A single `docker-compose.yml` at the repo root spins up all required infrastructure locally. This is the standard setup on real engineering teams.
+
+```yaml
+# docker-compose.yml (overview)
+services:
+  postgres:    # PostgreSQL on port 5432
+  redis:       # Redis on port 6379 (if running locally instead of Upstash)
+  elasticsearch: # Elasticsearch on port 9200
+```
+
+---
+
 ## Hosting & Infrastructure
 
-| Technology | Purpose | Free Tier |
+| Service | Purpose | Cost |
 |---|---|---|
-| **Vercel** | Frontend hosting and CDN | Generous free tier, unlimited personal projects |
-| **Railway** | Backend service, PostgreSQL database, and BullMQ workers | Hobby plan — $5 credit/month, enough for a personal project |
-
-**Vercel** is purpose-built for frontend apps. It deploys directly from GitHub, handles global CDN distribution automatically, and satisfies the CDN layer in the system architecture. Every push to `main` triggers an automatic redeploy.
-
-**Railway** runs the Node.js backend, hosts the PostgreSQL database, and runs background worker processes — all in one platform. It deploys from GitHub on every push and supports multiple services (API server + worker) in the same project.
+| **Vercel** | Frontend hosting and global CDN | Free (Hobby plan) |
+| **Railway** | Backend service, PostgreSQL, Elasticsearch, and BullMQ workers | ~$5/month |
+| **Upstash** | Managed Redis (cache + queue) | Free (10k commands/day) |
+| **Cloudflare R2** | GPX file blob storage | Free (10GB) |
+| **Mapbox** | Map rendering + elevation + surface APIs | Free (50k map loads/month) |
+| **Total** | | **~$5/month** |
 
 ---
 
@@ -112,36 +137,34 @@ Mapbox provides all three map-related capabilities under a single provider and f
 Browser
 ├── React + Vite + TypeScript
 ├── Tailwind CSS
-├── Zustand + TanStack Query
+├── Zustand (client state) + TanStack Query (server state)
 └── Mapbox GL JS → Mapbox Tile Servers
 
 Vercel (CDN + Frontend Hosting)
 
-API Gateway / Railway
+Railway
 └── Node.js + Express + TypeScript
+    ├── REST API — auth, routes CRUD, GPX export, user profile
+    ├── GraphQL API — explore page route querying
     ├── Prisma → PostgreSQL (Railway)
+    ├── Elasticsearch client → Elasticsearch (Railway)
     ├── BullMQ → Upstash Redis
     ├── Mapbox Elevation API (server-side)
     └── Mapbox Surface API (server-side)
 
 Workers (Railway)
-└── BullMQ Worker → Cloudflare R2 (Blob Storage)
-                 → PostgreSQL (update gpx_file_path)
+└── BullMQ Worker
+    ├── Cloudflare R2 (GPX file upload)
+    ├── PostgreSQL (update gpx_file_path)
+    └── Elasticsearch (index new/updated route)
 
 Upstash Redis
 ├── Cache layer
 └── BullMQ queue backend
+
+Local Development
+└── Docker Compose
+    ├── PostgreSQL (port 5432)
+    ├── Redis (port 6379)
+    └── Elasticsearch (port 9200)
 ```
-
----
-
-## Cost Summary
-
-| Service | Cost |
-|---|---|
-| Vercel | Free |
-| Railway | ~$5/month (hobby plan credit) |
-| Upstash Redis | Free (10k commands/day) |
-| Cloudflare R2 | Free (10GB storage) |
-| Mapbox | Free (50k map loads/month) |
-| **Total** | **~$0–5/month** |

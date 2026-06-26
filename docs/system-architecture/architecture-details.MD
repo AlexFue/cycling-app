@@ -21,7 +21,7 @@ The app is built as a **monolithic architecture** — a single backend service c
 ### Client (Browser)
 The user-facing React application running in the browser. Responsible for all UI rendering, user interactions, and outbound network calls. The client has two distinct types of external connections:
 
-- **API calls** — all data requests go through the API Gateway to the Backend Service
+- **API calls** — all data requests go through the API Gateway to the Backend Service via REST or GraphQL
 - **Map rendering** — the Mapbox GL JS SDK runs client-side and communicates directly with Mapbox tile servers to render the interactive map. This connection bypasses the backend entirely
 
 The client is a compiled static build (HTML, JS, CSS) distributed via the CDN.
@@ -47,7 +47,7 @@ The single entry point for all HTTP API requests from the client. No request rea
 ---
 
 ### Backend Service (Monolith)
-A single deployable backend application containing two internal modules. All business logic, database access, and third-party API calls originate here.
+A single deployable backend application containing two internal modules. All business logic, database access, and third-party API calls originate here. Exposes both a **REST API** for most operations and a **GraphQL API** for the explore page.
 
 #### Route Module
 Handles all route-related operations:
@@ -56,6 +56,7 @@ Handles all route-related operations:
 - Calls the Surface Service (3rd party) to fetch segment surface composition when a route is created or updated
 - Handles the `/api/map/elevation-samples` and `/api/map/segment-surface` preview endpoints during route creation
 - Enqueues a GPX file generation job to the Queue on `createRoute` and `updateRoute`
+- Syncs route data to Elasticsearch on create and update so the explore page search index stays current
 
 #### User Module
 Handles all user-related operations:
@@ -65,6 +66,16 @@ Handles all user-related operations:
 - Scoped route listing per user (public + private for own profile, public only for others)
 
 Both modules share a single database connection pool and are deployed together as one unit.
+
+---
+
+### REST API
+Used for all straightforward operations: auth, route CRUD, GPX export, user profile, map previews, and tags. Standard HTTP endpoints with predictable request/response shapes.
+
+---
+
+### GraphQL API
+Used selectively for the explore page. Different explore views (route cards, map pin previews, detail panels) need different subsets of route data. GraphQL lets the client request exactly the fields it needs in a single query, avoiding over-fetching across many route results. All other operations remain REST.
 
 ---
 
@@ -85,26 +96,34 @@ All writes are confirmed before a success response is returned to the client. Re
 
 ---
 
+### Elasticsearch
+Powers full-text search and filtering on the explore page. Route data (name, description, tags, difficulty, distance, surface types) is synced from PostgreSQL to Elasticsearch whenever a route is created or updated. The explore page GraphQL query hits Elasticsearch directly rather than PostgreSQL, giving fast and flexible search across all public routes.
+
+Run self-managed: locally via Docker, and on Railway in production.
+
+---
+
 ### Queue
-An asynchronous job queue that decouples GPX file generation from the HTTP request lifecycle. When a route is created or updated, the Route Module enqueues a job containing the `route_id` rather than generating the GPX file inline. This prevents large file generation operations from blocking the API response and keeps response times within NFR targets.
+An asynchronous job queue (BullMQ backed by Redis) that decouples GPX file generation from the HTTP request lifecycle. When a route is created or updated, the Route Module enqueues a job containing the `route_id` rather than generating the GPX file inline. This prevents large file generation operations from blocking the API response and keeps response times within NFR targets.
 
 ---
 
 ### Workers
-Background processes that consume jobs from the Queue and handle GPX file generation asynchronously. For each job, a worker:
+Background processes that consume jobs from the Queue and handle GPX file generation and Elasticsearch sync asynchronously. For each job, a worker:
 
 1. Fetches route and checkpoint data from the database by `route_id`
 2. Generates a valid GPX 1.1 XML file from the checkpoint coordinates
 3. Uploads the GPX file to Blob Storage
 4. Receives the file URL from Blob Storage
 5. Updates the `gpx_file_path` column on the corresponding `ROUTES` row in the database
+6. Syncs the updated route document to Elasticsearch
 
 If the `GET /api/routes/:id/export/gpx` endpoint is called before the worker has completed, the backend returns a `202 Accepted` response indicating the file is still being generated.
 
 ---
 
-### Blob Storage
-Object storage for GPX files (e.g. AWS S3, Google Cloud Storage, or Cloudflare R2). Files are stored at a path keyed by route ID. The database holds only a reference URL to the file — the binary file content lives entirely in blob storage. This keeps the database lean and avoids storing large binary data in relational rows.
+### Blob Storage (Cloudflare R2)
+Object storage for GPX files. Files are stored at a path keyed by route ID. The database holds only a reference URL to the file — the binary file content lives entirely in blob storage. This keeps the database lean and avoids storing large binary data in relational rows.
 
 ---
 
@@ -152,13 +171,27 @@ Full rationale for the following decisions is documented in `/docs/decisions/`:
 5.  Route Module calls Surface Service → stores segments + segment surfaces in DB
 6.  Route Module computes difficulty, distance, elevation gain/loss
 7.  Route Module writes ROUTES row to DB with gpx_file_path: null
-8.  Route Module enqueues GPX generation job with route_id
+8.  Route Module enqueues GPX generation + Elasticsearch sync job with route_id
 9.  Route Module returns 201 with full route object to client
 10. Worker picks up job from Queue
 11. Worker fetches route + checkpoints from DB
 12. Worker generates GPX 1.1 XML file
 13. Worker uploads file to Blob Storage → receives file URL
 14. Worker updates ROUTES row: gpx_file_path = <blob url>
+15. Worker syncs route document to Elasticsearch index
+```
+
+---
+
+## Data Flow: Explore Page Search
+
+```
+1.  Client sends GraphQL query with search term, tag filters, difficulty filter
+2.  API Gateway validates JWT
+3.  Route Module queries Elasticsearch with the provided filters
+4.  Elasticsearch returns matching route documents
+5.  Route Module returns only the fields the GraphQL query requested
+6.  Client renders route cards from the response
 ```
 
 ---
@@ -185,9 +218,10 @@ The system is designed for **1k concurrent users** initially. The following cons
 - **No server-side session state** — JWTs are stateless; any backend instance can handle any request
 - **Stateless backend** — no in-memory state is shared between requests or instances
 - **Async GPX generation** — the queue/worker pattern means file generation scales independently of the API layer
+- **Elasticsearch** — search is decoupled from the primary database, meaning explore page load does not compete with write operations on PostgreSQL
 
 To scale beyond initial targets, the following could be added without architectural changes:
 - Additional backend instances behind the load balancer
 - Additional workers to process the queue faster
-- A read replica on the database for explore/list queries
-- Redis caching layer for frequently read routes
+- A read replica on the database for non-explore queries
+- Additional Elasticsearch nodes for search throughput
