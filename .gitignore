@@ -33,6 +33,7 @@ out/
 # ==============================
 # Keep schema.prisma committed, ignore generated client
 prisma/generated/
+server/src/generated/
 
 # ==============================
 # Logs

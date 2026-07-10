@@ -1,0 +1,109 @@
+// Prisma schema for the Cycling App
+// Modeled from docs/api.md response shapes and docs/decisions/ADR-001 through ADR-005
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  routes Route[]
+
+  @@map("users")
+}
+
+model Route {
+  id             String   @id @default(uuid())
+  creatorId      String   @map("creator_id")
+  creator        User     @relation(fields: [creatorId], references: [id])
+  name           String
+  description    String?
+  isPublic       Boolean  @default(false) @map("is_public")
+  // Computed server-side on save from elevation gain, distance, and surface types — see ADR-004
+  difficulty     String?
+  distanceKm     Float?   @map("distance_km")
+  elevationGainM Float?   @map("elevation_gain_m")
+  elevationLossM Float?   @map("elevation_loss_m")
+  // Populated asynchronously by the GPX generation worker once the file is uploaded to blob storage
+  gpxFilePath    String?  @map("gpx_file_path")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  checkpoints      Checkpoint[]
+  segments         Segment[]
+  elevationSamples RouteElevationSample[]
+  tags             RouteTag[]
+
+  @@map("routes")
+}
+
+model Checkpoint {
+  id         String  @id @default(uuid())
+  routeId    String  @map("route_id")
+  route      Route   @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  orderIndex Int     @map("order_index")
+  latitude   Float
+  longitude  Float
+  elevationM Float?  @map("elevation_m")
+
+  @@unique([routeId, orderIndex])
+  @@map("checkpoints")
+}
+
+model Segment {
+  id         String  @id @default(uuid())
+  routeId    String  @map("route_id")
+  route      Route   @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  orderIndex Int     @map("order_index")
+  distanceKm Float   @map("distance_km")
+
+  surfaces SegmentSurface[]
+
+  @@unique([routeId, orderIndex])
+  @@map("segments")
+}
+
+// One row per surface type per segment, rather than fixed columns on Segment — see ADR-005.
+// surfaceType is validated against a controlled vocabulary at the application layer, not the DB schema,
+// so new surface types can be supported without a migration.
+model SegmentSurface {
+  id          String  @id @default(uuid())
+  segmentId   String  @map("segment_id")
+  segment     Segment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  surfaceType String  @map("surface_type")
+  percentage  Float
+
+  @@map("segment_surfaces")
+}
+
+// Computed once at save time and persisted rather than recomputed on every route view — see ADR-003.
+model RouteElevationSample {
+  routeId     String @map("route_id")
+  route       Route  @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  sampleIndex Int    @map("sample_index")
+  distanceKm  Float  @map("distance_km")
+  elevationM  Float  @map("elevation_m")
+
+  @@id([routeId, sampleIndex])
+  @@map("route_elevation_samples")
+}
+
+// tag is validated against the controlled vocabulary returned by GET /api/tags at the application layer
+model RouteTag {
+  routeId String @map("route_id")
+  route   Route  @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  tag     String
+
+  @@id([routeId, tag])
+  @@map("route_tags")
+}
