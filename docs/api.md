@@ -122,7 +122,7 @@ None
 **POST** /api/users
 
 **Description**
-Creates a new user account.
+Creates a new user account and logs them in, returning a JWT token.
 
 **Authorization:** Not required
 
@@ -138,9 +138,12 @@ Creates a new user account.
 **Response 201** — Created
 ```json
 {
-  "id": "uuid",
-  "username": "string",
-  "created_at": "timestamp"
+  "token": "string",
+  "user": {
+    "id": "uuid",
+    "username": "string",
+    "created_at": "timestamp"
+  }
 }
 ```
 
