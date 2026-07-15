@@ -96,6 +96,25 @@ All writes are confirmed before a success response is returned to the client. Re
 
 ---
 
+### Cache (Redis via Upstash)
+Redis serves three distinct purposes in this system:
+
+- **BullMQ queue backend** — stores job metadata for async GPX 
+  generation. Workers consume jobs from Redis, generate GPX files, 
+  and upload to Blob Storage.
+
+- **Route response caching** — GET /api/routes/:id responses are 
+  cached in Redis after the first DB fetch. Subsequent requests 
+  for the same route are served from cache, bypassing PostgreSQL. 
+  Cache is invalidated when a route is updated or deleted.
+
+- **JWT blocklist** — on logout, the invalidated JWT is stored in 
+  Redis with a TTL matching the token's remaining expiry time. 
+  Auth middleware checks Redis on every request to reject 
+  invalidated tokens before they naturally expire.
+
+---
+
 ### Elasticsearch
 Powers full-text search and filtering on the explore page. Route data (name, description, tags, difficulty, distance, surface types) is synced from PostgreSQL to Elasticsearch whenever a route is created or updated. The explore page GraphQL query hits Elasticsearch directly rather than PostgreSQL, giving fast and flexible search across all public routes.
 
