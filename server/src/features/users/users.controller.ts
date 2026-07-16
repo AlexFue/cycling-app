@@ -1,7 +1,8 @@
 import { Request, Response } from 'express'
 import * as userService from './users.service'
 import * as authService from '../auth/auth.service'
-import { Prisma } from '../../generated/prisma/client'
+import { Prisma, User } from '../../generated/prisma/client'
+import { UserResponse } from 'shared'
 
 /**
  * Creates a new user
@@ -44,18 +45,17 @@ export const createUserHandler = async (req: Request, res: Response) => {
     }
 
     // All validations passed, create the user
-    const user = await userService.createUser(req.body)
+    const user: User = await userService.createUser(req.body)
+    const responseUser: UserResponse = {
+      id: user.id,
+      username: user.username,
+      createdAt: user.createdAt,
+    }
     // Return the created user with a 201 status code and JWT token
-    return res
-      .status(201)
-      .json({
-        user: {
-          id: user.id,
-          username: user.username,
-          createdAt: user.createdAt,
-        },
-        token: authService.generateToken(user),
-      })
+    return res.status(201).json({
+      user: responseUser,
+      token: authService.generateToken(user),
+    })
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

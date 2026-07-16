@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import * as authService from './auth.service'
-import { Prisma } from '../../generated/prisma/client'
+import { Prisma, User } from '../../generated/prisma/client'
+import { UserResponse } from 'shared'
 
 export const loginHandler = async (req: Request, res: Response) => {
   // Validate the request body contains the required fields: email and password
@@ -15,14 +16,14 @@ export const loginHandler = async (req: Request, res: Response) => {
   }
 
   try {
-    const user = await authService.login(email, password)
+    const user: User = await authService.login(email, password)
     const token = authService.generateToken(user)
-    return res
-      .status(200)
-      .json({
-        user: { id: user.id, email: user.email, createdAt: user.createdAt },
-        token,
-      })
+    const responseUser: UserResponse = {
+      id: user.id,
+      username: user.username,
+      createdAt: user.createdAt,
+    }
+    return res.status(200).json({ user: responseUser, token })
   } catch (error) {
     // Handle DB errors, credential errors, and other unexpected errors
     if (error instanceof Prisma.PrismaClientInitializationError) {

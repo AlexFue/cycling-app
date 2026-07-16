@@ -1,5 +1,12 @@
 {
+  "name": "cycling-app",
+  "private": true,
   "type": "module",
+  "workspaces": [
+    "client",
+    "server",
+    "shared"
+  ],
   "scripts": {
     "prepare": "husky",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",

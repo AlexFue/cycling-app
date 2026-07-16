@@ -1,6 +1,5 @@
-
 export interface UserResponse {
     id: string;
-    email: string;
-    createdAt: string
+    username: string;
+    createdAt: Date;
 }

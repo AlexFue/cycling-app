@@ -83,11 +83,8 @@ cd cycling-app
 
 ### 2. Install dependencies
 ```bash
-# Install server dependencies
-cd server && npm install
-
-# Install client dependencies
-cd ../client && npm install
+# Installs client, server, and shared dependencies together (npm workspaces)
+npm install
 ```
 
 ### 3. Set up environment variables
