@@ -2,18 +2,17 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { getUserByEmail } from '../users/users.service'
 import { User } from '../../generated/prisma/client'
+import { TOKEN_EXPIRATION } from '../../constants'
 
 export const generateToken = (user: User): string => {
   const payload = {
     id: user.id,
     username: user.username,
     email: user.email,
+    jti: crypto.randomUUID(), // Unique identifier for the token
   }
-  const secret = process.env.JWT_SECRET
-  if (!secret) {
-    throw new Error('JWT_SECRET is not defined in environment variables')
-  }
-  const token = jwt.sign(payload, secret, { expiresIn: '1h' })
+  const secret = process.env.JWT_SECRET!
+  const token = jwt.sign(payload, secret, { expiresIn: TOKEN_EXPIRATION })
   return token
 }
 

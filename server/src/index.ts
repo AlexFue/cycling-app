@@ -18,6 +18,11 @@ if (!process.env.JWT_SECRET) {
   process.exit(1)
 }
 
+if (!process.env.REDIS_URL) {
+  console.error('REDIS_URL is not defined in environment variables')
+  process.exit(1)
+}
+
 const PORT = process.env.PORT ?? 3000
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`)
