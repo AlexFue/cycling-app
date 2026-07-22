@@ -6,3 +6,7 @@ export const redis = new Redis(process.env.REDIS_URL!, {
 }).on('error', (err) => {
   console.error('Redis connection error:', err)
 })
+
+export const verifyRedisConnection = async () => {
+  await redis.ping()
+}

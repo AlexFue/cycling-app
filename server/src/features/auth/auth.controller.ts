@@ -42,30 +42,30 @@ export const loginHandler = async (req: Request, res: Response) => {
 
 // Add the token's jti to the Redis blocklist with remaining TTL of token
 export const logoutHandler = async (req: Request, res: Response) => {
+  if (!req.user || !req.user.jti) {
+    return res
+      .status(400)
+      .json({ error: 'Invalid request: missing token identifier' })
+  }
+
+  const jti = req.user.jti
+  const exp = req.user.exp
+
+  if (!exp) {
+    return res
+      .status(400)
+      .json({ error: 'Invalid request: missing token expiration' })
+  }
+
+  const ttl = exp - Math.floor(Date.now() / 1000) // Calculate remaining TTL in seconds
+
   try {
-    if (!req.user || !req.user.jti) {
-      return res
-        .status(400)
-        .json({ error: 'Invalid request: missing token identifier' })
-    }
-
-    const jti = req.user.jti
-    const exp = req.user.exp
-
-    if (!exp) {
-      return res
-        .status(400)
-        .json({ error: 'Invalid request: missing token expiration' })
-    }
-
-    const ttl = exp - Math.floor(Date.now() / 1000) // Calculate remaining TTL in seconds
-
     // Add the jti to Redis blocklist with TTL
     await redis.set(`blocklist:${jti}`, 'true', 'EX', ttl)
 
     return res.status(204).send() // No content response
   } catch (error) {
-    console.error('Error logging out user:', error)
-    return res.status(500).json({ error: 'Failed to log out user' })
+    console.error('Redis unreachable:', error)
+    return res.status(503).json({ error: 'Service temporarily unavailable' })
   }
 }
