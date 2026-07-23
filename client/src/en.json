@@ -1,0 +1,17 @@
+{
+  "appName": "RideMap",
+  "login": {
+    "title": "Welcome back",
+    "subtitle": "Login to plan your next adventure",
+    "email": "Email",
+    "password": "Password",
+    "loginButton": "Login",
+    "forgotPassword": "Forgot your password?",
+    "newHere": "New here?",
+    "createAccount": "Create an account"
+  },
+  "placeholders": {
+    "email": "Enter your email",
+    "password": "Enter your password"
+  }
+}
