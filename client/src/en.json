@@ -1,17 +1,34 @@
 {
   "appName": "RideMap",
-  "login": {
-    "title": "Welcome back",
-    "subtitle": "Login to plan your next adventure",
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "subTitle": "Login to plan your next adventure",
+      "loginButton": "Login",
+      "forgotPassword": "Forgot your password?",
+      "newHere": "New here?",
+      "createAccount": "Create an account"
+    },
+    "signUp": {
+      "title": "Create your account",
+      "subTitle": "Free forever. No credit card.",
+      "displayName": "Display name",
+      "createAccount": "Create account",
+      "bannerModo": "Built for cyclists",
+      "bannerTitle": "Plan routes without worrying about the next turn",
+      "bannerSubTitle": "Drop pins, see paved vs gravel splits in real time, and share routes with friends",
+      "metric1": "12k+",
+      "metricDescription1": "Routes saved",
+      "metric2": "2.4M",
+      "metricDescription2": "Miles planned"
+    },
     "email": "Email",
-    "password": "Password",
-    "loginButton": "Login",
-    "forgotPassword": "Forgot your password?",
-    "newHere": "New here?",
-    "createAccount": "Create an account"
+    "password": "Password"
   },
+
   "placeholders": {
     "email": "Enter your email",
-    "password": "Enter your password"
+    "password": "Enter your password",
+    "displayName": "Wout Van Aert"
   }
 }

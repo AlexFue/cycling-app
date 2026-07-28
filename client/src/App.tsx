@@ -4,6 +4,7 @@ function App() {
   return (
     <div>
       <LoginPage />
+      {/* <SignUpPage /> */}
     </div>
   )
 }

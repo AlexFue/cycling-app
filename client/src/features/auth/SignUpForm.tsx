@@ -1,13 +1,27 @@
-import Messages from '../../en.json'
 import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field'
+import Messages from '../../en.json'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
-const LoginForm: React.FC = () => {
+const SignUpForm: React.FC = () => {
   return (
     <form>
       <FieldSet>
         <FieldGroup className="**:data-[slot=input]:h-11">
+          <Field>
+            <FieldLabel
+              htmlFor="displayName"
+              className="text-xs uppercase tracking-wide text-muted-foreground"
+            >
+              {Messages.auth.signUp.displayName}
+            </FieldLabel>
+            <Input
+              id="displayName"
+              type="displayName"
+              placeholder={Messages.placeholders.displayName}
+            />
+          </Field>
+
           <Field>
             <FieldLabel
               htmlFor="email"
@@ -23,20 +37,12 @@ const LoginForm: React.FC = () => {
           </Field>
 
           <Field>
-            <div className="flex items-center justify-between">
-              <FieldLabel
-                htmlFor="password"
-                className="text-xs uppercase tracking-wide text-muted-foreground"
-              >
-                {Messages.auth.password}
-              </FieldLabel>
-              <a
-                href="/forgot-password"
-                className="text-sm text-primary hover:underline"
-              >
-                {Messages.auth.login.forgotPassword}
-              </a>
-            </div>
+            <FieldLabel
+              htmlFor="password"
+              className="text-xs uppercase tracking-wide text-muted-foreground"
+            >
+              {Messages.auth.password}
+            </FieldLabel>
             <Input
               id="password"
               type="password"
@@ -45,19 +51,12 @@ const LoginForm: React.FC = () => {
           </Field>
 
           <Button type="submit" className="h-11 w-full px-4 py-2.5">
-            {Messages.auth.login.loginButton}
+            {Messages.auth.signUp.createAccount}
           </Button>
-
-          <p className="text-center text-sm text-muted-foreground">
-            {Messages.auth.login.newHere}{' '}
-            <a href="/signup" className="text-sm text-primary hover:underline">
-              {Messages.auth.login.createAccount}
-            </a>
-          </p>
         </FieldGroup>
       </FieldSet>
     </form>
   )
 }
 
-export default LoginForm
+export default SignUpForm
