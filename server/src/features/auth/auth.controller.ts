@@ -1,15 +1,19 @@
 import { Request, Response } from 'express'
 import * as authService from './auth.service'
 import { Prisma, User } from '../../generated/prisma/client'
-import { UserResponse } from 'shared'
+import { AuthResponse, LoginRequest, UserResponse } from 'shared'
 import { redis } from '../../lib/redis'
+import { AuthErrorResponse } from '../../types/types'
 
-export const loginHandler = async (req: Request, res: Response) => {
+export const loginHandler = async (
+  req: Request,
+  res: Response<AuthResponse | AuthErrorResponse>
+) => {
   // Validate the request body contains the required fields: email and password
   if (!req.body) {
     return res.status(400).json({ error: 'Request body is required' })
   }
-  const { email, password } = req.body
+  const { email, password } = req.body as LoginRequest
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' })
   } else if (typeof email !== 'string' || typeof password !== 'string') {

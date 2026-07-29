@@ -11,19 +11,19 @@ export const getUserByUsername = async (
   return user
 }
 
-export const createUser = async (userData: {
-  username: string
-  password: string
+export const createUser = async (
+  username: string,
+  password: string,
   email: string
-}): Promise<User> => {
+): Promise<User> => {
   // hash the password before saving it to the database
-  const passwordHash = await bcrypt.hash(userData.password, 10)
+  const passwordHash = await bcrypt.hash(password, 10)
 
   // create the user in the database
   const user = await prisma.user.create({
     data: {
-      username: userData.username,
-      email: userData.email,
+      username: username,
+      email: email,
       passwordHash,
     },
   })

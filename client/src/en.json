@@ -12,7 +12,7 @@
     "signUp": {
       "title": "Create your account",
       "subTitle": "Free forever. No credit card.",
-      "displayName": "Display name",
+      "username": "Username",
       "createAccount": "Create account",
       "bannerModo": "Built for cyclists",
       "bannerTitle": "Plan routes without worrying about the next turn",
@@ -29,6 +29,6 @@
   "placeholders": {
     "email": "Enter your email",
     "password": "Enter your password",
-    "displayName": "Wout Van Aert"
+    "username": "woutVanAert"
   }
 }

@@ -10,15 +10,15 @@ const SignUpForm: React.FC = () => {
         <FieldGroup className="**:data-[slot=input]:h-11">
           <Field>
             <FieldLabel
-              htmlFor="displayName"
+              htmlFor="username"
               className="text-xs uppercase tracking-wide text-muted-foreground"
             >
-              {Messages.auth.signUp.displayName}
+              {Messages.auth.signUp.username}
             </FieldLabel>
             <Input
-              id="displayName"
-              type="displayName"
-              placeholder={Messages.placeholders.displayName}
+              id="username"
+              type="username"
+              placeholder={Messages.placeholders.username}
             />
           </Field>
 
