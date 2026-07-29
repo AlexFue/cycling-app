@@ -2,6 +2,7 @@ import Messages from '../../en.json'
 import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Link } from '@tanstack/react-router'
 
 const LoginForm: React.FC = () => {
   return (
@@ -30,12 +31,9 @@ const LoginForm: React.FC = () => {
               >
                 {Messages.auth.password}
               </FieldLabel>
-              <a
-                href="/forgot-password"
-                className="text-sm text-primary hover:underline"
-              >
+              <Link to="/" className="text-sm text-primary hover:underline">
                 {Messages.auth.login.forgotPassword}
-              </a>
+              </Link>
             </div>
             <Input
               id="password"
@@ -50,9 +48,9 @@ const LoginForm: React.FC = () => {
 
           <p className="text-center text-sm text-muted-foreground">
             {Messages.auth.login.newHere}{' '}
-            <a href="/signup" className="text-sm text-primary hover:underline">
+            <Link to="/signup" className="text-sm text-primary hover:underline">
               {Messages.auth.login.createAccount}
-            </a>
+            </Link>
           </p>
         </FieldGroup>
       </FieldSet>

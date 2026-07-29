@@ -1,12 +1,7 @@
-import LoginPage from './features/auth/LoginPage'
+import { Outlet } from '@tanstack/react-router'
 
 function App() {
-  return (
-    <div>
-      <LoginPage />
-      {/* <SignUpPage /> */}
-    </div>
-  )
+  return <Outlet />
 }
 
 export default App
