@@ -1,15 +1,39 @@
 import Messages from '../../en.json'
-import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field'
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldSet,
+} from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Link } from '@tanstack/react-router'
+import { loginSchema, type LoginRequest } from 'shared'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useLogin } from './hooks/useLogin'
 
 const LoginForm: React.FC = () => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginRequest>({
+    resolver: zodResolver(loginSchema),
+  })
+
+  const { mutate, isPending, error } = useLogin()
+
+  const onSubmit = (data: LoginRequest) => {
+    mutate(data)
+  }
+
   return (
-    <form>
+    <form onSubmit={handleSubmit(onSubmit)}>
       <FieldSet>
         <FieldGroup className="**:data-[slot=input]:h-11">
-          <Field>
+          <Field data-invalid={!!errors.email}>
             <FieldLabel
               htmlFor="email"
               className="text-xs uppercase tracking-wide text-muted-foreground"
@@ -18,12 +42,14 @@ const LoginForm: React.FC = () => {
             </FieldLabel>
             <Input
               id="email"
-              type="email"
               placeholder={Messages.placeholders.email}
+              aria-invalid={!!errors.email}
+              {...register('email')}
             />
+            <FieldError errors={[errors.email]} />
           </Field>
 
-          <Field>
+          <Field data-invalid={!!errors.password}>
             <div className="flex items-center justify-between">
               <FieldLabel
                 htmlFor="password"
@@ -37,21 +63,22 @@ const LoginForm: React.FC = () => {
             </div>
             <Input
               id="password"
-              type="password"
               placeholder={Messages.placeholders.password}
+              aria-invalid={!!errors.password}
+              {...register('password')}
             />
+            <FieldError errors={[errors.password]} />
           </Field>
 
-          <Button type="submit" className="h-11 w-full px-4 py-2.5">
-            {Messages.auth.login.loginButton}
-          </Button>
+          {error && <p className="text-sm text-destructive">{error.message}</p>}
 
-          <p className="text-center text-sm text-muted-foreground">
-            {Messages.auth.login.newHere}{' '}
-            <Link to="/signup" className="text-sm text-primary hover:underline">
-              {Messages.auth.login.createAccount}
-            </Link>
-          </p>
+          <Button
+            type="submit"
+            disabled={isPending}
+            className="h-11 w-full px-4 py-2.5"
+          >
+            {isPending ? '...' : Messages.auth.login.loginButton}
+          </Button>
         </FieldGroup>
       </FieldSet>
     </form>

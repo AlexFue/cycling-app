@@ -1,6 +1,7 @@
 import { prisma } from '../../lib/prisma'
 import bcrypt from 'bcryptjs'
 import { User } from '../../generated/prisma/client'
+import type { SignUpRequest } from 'shared'
 
 export const getUserByUsername = async (
   username: string
@@ -11,11 +12,11 @@ export const getUserByUsername = async (
   return user
 }
 
-export const createUser = async (
-  username: string,
-  password: string,
-  email: string
-): Promise<User> => {
+export const createUser = async ({
+  username,
+  password,
+  email,
+}: SignUpRequest): Promise<User> => {
   // hash the password before saving it to the database
   const passwordHash = await bcrypt.hash(password, 10)
 

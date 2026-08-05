@@ -2,6 +2,7 @@ import { Bike } from 'lucide-react'
 import Messages from '../../en.json'
 import LoginForm from './LoginForm'
 import ThemeToggle from '@/components/ThemeToggle'
+import { Link } from '@tanstack/react-router'
 
 const LoginPage: React.FC = () => {
   return (
@@ -24,8 +25,13 @@ const LoginPage: React.FC = () => {
               </p>
             </div>
           </div>
-
           <LoginForm />
+          <p className="text-center text-sm text-muted-foreground">
+            {Messages.auth.login.newHere}{' '}
+            <Link to="/signup" className="text-sm text-primary hover:underline">
+              {Messages.auth.login.createAccount}
+            </Link>
+          </p>
         </div>
       </div>
     </div>

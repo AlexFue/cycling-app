@@ -2,7 +2,7 @@ import { Request, Response } from 'express'
 import * as userService from './users.service'
 import * as authService from '../auth/auth.service'
 import { Prisma, User } from '../../generated/prisma/client'
-import { AuthResponse, SignUpRequest, UserResponse } from 'shared'
+import { AuthResponse, signUpSchema, UserResponse } from 'shared'
 import { AuthErrorResponse } from '../../types/types'
 
 /**
@@ -16,26 +16,11 @@ export const createUserHandler = async (
   req: Request,
   res: Response<AuthResponse | AuthErrorResponse>
 ) => {
-  // Validate the request body contains the required fields: username, password, and email
-  if (!req.body) {
-    return res.status(400).json({ error: 'Request body is required' })
+  const result = signUpSchema.safeParse(req.body)
+  if (!result.success) {
+    return res.status(400).json({ error: result.error.issues[0].message })
   }
-  const { username, password, email } = req.body as SignUpRequest
-  if (
-    typeof username !== 'string' ||
-    typeof password !== 'string' ||
-    typeof email !== 'string'
-  ) {
-    return res
-      .status(400)
-      .json({ error: 'Username, password, and email must be strings' })
-  } else if (!username || username.trim() === '') {
-    return res.status(400).json({ error: 'Username is required' })
-  } else if (!password || password.trim() === '') {
-    return res.status(400).json({ error: 'Password is required' })
-  } else if (!email || email.trim() === '') {
-    return res.status(400).json({ error: 'Email is required' })
-  }
+  const { username, email, password } = result.data
 
   try {
     // Validate username is unique
@@ -51,7 +36,11 @@ export const createUserHandler = async (
     }
 
     // All validations passed, create the user
-    const user: User = await userService.createUser(username, email, password)
+    const user: User = await userService.createUser({
+      username,
+      email,
+      password,
+    })
     const responseUser: UserResponse = {
       id: user.id,
       username: user.username,
