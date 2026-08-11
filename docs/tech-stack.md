@@ -12,35 +12,37 @@ The stack is chosen to reflect technologies used in real production environments
 
 ## Frontend
 
-| Technology | Purpose |
-|---|---|
-| **React** | UI component framework |
-| **Vite** | Build tool and local dev server |
-| **TypeScript** | Static typing across the entire frontend codebase |
-| **Tailwind CSS** | Utility-first CSS framework for responsive styling |
-| **Zustand** | Client-side state management (UI state, modals, local interactions) |
-| **TanStack Query** | Server-side state management (fetching, caching, and syncing API data) |
-| **Mapbox GL JS** | Client-side interactive map SDK for rendering the map, placing checkpoints, snapping paths to roads, and drawing route lines |
+| Technology         | Purpose                                                                                                                      |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| **React**          | UI component framework                                                                                                       |
+| **Vite**           | Build tool and local dev server                                                                                              |
+| **TypeScript**     | Static typing across the entire frontend codebase                                                                            |
+| **Tailwind CSS**   | Utility-first CSS framework for responsive styling                                                                           |
+| **Zustand**        | Client-side state management (UI state, modals, local interactions)                                                          |
+| **TanStack Query** | Server-side state management (fetching, caching, and syncing API data)                                                       |
+| **Mapbox GL JS**   | Client-side interactive map SDK for rendering the map, placing checkpoints, snapping paths to roads, and drawing route lines |
 
-**Zustand vs TanStack Query** — these are complementary, not redundant. Zustand owns UI state (is a modal open, what step is the user on). TanStack Query owns server state (the fetched routes list, the current route object). Using both together is the standard pattern in production React apps.
+**Why Zustand?** - Zustand is simple to use/learn and does not need boilerplate code like Redux. With Zustand, you define a store in one file and use it directly in components. Zustand owns UI state (is a modal open, what step is the user on).
+
+**Why TanStack Query** - Tanstack is the most fully featured when compared to SWR since it handles caching, background refetching, pagination, updates, and mutations out the box. It eliminates an entire class of bugs that come from managing loading/error/data state manually in useEffect when writing your own code. tack Query owns server state (the fetched routes list, the current route object).
 
 ---
 
 ## Backend
 
-| Technology | Purpose |
-|---|---|
-| **Node.js** | JavaScript runtime for the backend |
-| **Express** | HTTP server and REST API routing framework |
-| **TypeScript** | Static typing on the backend, shared types with the frontend |
-| **Prisma** | ORM for type-safe database queries and schema management |
-| **GraphQL** | Query language used selectively for the explore page where flexible, client-driven data fetching is genuinely beneficial |
-| **BullMQ** | Job queue library for async GPX file generation (runs on top of Redis) |
-| **JWT** | Stateless authentication tokens |
+| Technology     | Purpose                                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Node.js**    | JavaScript runtime for the backend                                                                                       |
+| **Express**    | HTTP server and REST API routing framework                                                                               |
+| **TypeScript** | Static typing on the backend, shared types with the frontend                                                             |
+| **Prisma**     | ORM for type-safe database queries and schema management                                                                 |
+| **GraphQL**    | Query language used selectively for the explore page where flexible, client-driven data fetching is genuinely beneficial |
+| **BullMQ**     | Job queue library for async GPX file generation (runs on top of Redis)                                                   |
+| **JWT**        | Stateless authentication tokens                                                                                          |
 
 **Why TypeScript on the backend too** — with TypeScript on both sides, API response shapes and shared data types can be defined once and used across the entire codebase. This eliminates a whole class of client/server contract mismatches and is standard practice in production TypeScript monorepos.
 
-**Why Prisma** — Prisma's schema definition maps directly to the ERD and gives you type-safe database queries in TypeScript. It also handles migrations, making schema changes version-controlled and reproducible across environments.
+**Why Prisma** — Prisma's schema definition maps directly to the ERD and gives you type-safe database queries in TypeScript (Other ORMs don't have Typescript integration). It also handles migrations, making schema changes version-controlled and reproducible across environments.
 
 **GraphQL scope** — GraphQL is not used to replace the entire REST API. It is used selectively for the explore page, where different views (route cards, map previews, detail panels) need different subsets of the same route data. GraphQL lets the client request exactly the fields it needs in a single query, avoiding both over-fetching and multiple round trips. All other endpoints (auth, route creation, GPX export, user profile) remain REST.
 
@@ -48,27 +50,32 @@ The stack is chosen to reflect technologies used in real production environments
 
 ## Database
 
-| Technology | Purpose |
-|---|---|
-| **PostgreSQL** | Primary relational database for all application data |
+| Technology        | Purpose                                                    |
+| ----------------- | ---------------------------------------------------------- |
+| **PostgreSQL**    | Primary relational database for all application data       |
 | **Elasticsearch** | Full-text search and filtering engine for the explore page |
 
 **PostgreSQL** is the most widely used open-source relational database in the industry. It maps directly to the relational ERD designed for this app and is supported natively by every hosting platform used in this stack. Managed on Railway.
 
-**Elasticsearch** powers route search and filtering on the explore page — searching by name, filtering by tags, difficulty, and surface type. PostgreSQL can handle basic filtering but Elasticsearch is purpose-built for full-text search and is what production apps use when search quality matters. Route data is synced from PostgreSQL to Elasticsearch when routes are created or updated. Run self-managed (free) via Docker locally and on Railway in production.
+**Elasticsearch** powers route search and filtering on the explore page — searching by name, filtering by tags, difficulty, and surface type. PostgreSQL can handle basic filtering but can get expensive with text search queries. Elasticsearch is purpose-built for full-text search and is what production apps use when search quality matters. Route data is synced from PostgreSQL to Elasticsearch when routes are created or updated. Run self-managed (free) via Docker locally and on Railway in production.
 
 ---
 
 ## Cache & Queue
 
-| Technology | Purpose |
-|---|---|
-| **Redis via Upstash** | In-memory data store used for caching and as the BullMQ queue backend |
-| **BullMQ** | Job queue for async GPX generation — enqueues jobs on route create/update, workers consume and process them |
+| Technology            | Purpose                                                                                                     |
+| --------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Redis via Upstash** | In-memory data store used for caching and as the BullMQ queue backend                                       |
+| **BullMQ**            | Job queue for async GPX generation — enqueues jobs on route create/update, workers consume and process them |
 
-**Why Upstash** — Upstash is serverless Redis with a free tier (10k commands/day) and zero infrastructure to manage. It provides a connection URL and behaves like any standard Redis instance. One Upstash instance serves both the cache layer and the BullMQ queue backend.
+**Why Redis?** - Redis is used for storing data and quick accessing. Using other technologies like Kafka would be overkill as it's for extremely high-throughput. Memcached is another option but it only supports string values and has no persistence.
+
+**Why Upstash?** — Upstash is serverless Redis with a free tier (10k commands/day) and zero infrastructure to manage. It provides a connection URL and behaves like any standard Redis instance. One Upstash instance serves both the cache layer and the BullMQ queue backend.
+
+**Why BullMQ** - GPX file generation involves reading route data, building XML, and uploading a file to an external service (R2). This could take several seconds. If this was done synchronously inside the `POST /api/routes` handler the client would have to wait for all of it before getting a response — violating the sub-2-second API response NFR. A job queue lets me return the 201 immediately and process the file generation asynchronously in the background. BullMQ specifically because it's the dominant queue library in Node.js ecosystem.
 
 **BullMQ worker flow:**
+
 1. Route creation enqueues a job with the `route_id`
 2. A BullMQ worker picks up the job
 3. Worker generates the GPX file and uploads it to Blob Storage
@@ -79,8 +86,8 @@ The stack is chosen to reflect technologies used in real production environments
 
 ## Blob Storage
 
-| Technology | Purpose |
-|---|---|
+| Technology        | Purpose                                |
+| ----------------- | -------------------------------------- |
 | **Cloudflare R2** | Object storage for generated GPX files |
 
 Cloudflare R2 has a free tier (10GB storage, zero egress fees) and is S3-compatible — meaning the code written to interact with R2 is identical to AWS S3 code, a transferable real-world skill. The database stores only a reference URL to each file; the binary file content lives entirely in R2.
@@ -89,21 +96,21 @@ Cloudflare R2 has a free tier (10GB storage, zero egress fees) and is S3-compati
 
 ## Map & Third-Party APIs
 
-| Technology | Purpose |
-|---|---|
-| **Mapbox GL JS** | Client-side map rendering SDK (free tier: 50k map loads/month) |
-| **Mapbox Elevation API** | Server-side elevation sampling along route paths |
-| **Mapbox Surface API** | Server-side surface type composition per segment |
+| Technology               | Purpose                                                        |
+| ------------------------ | -------------------------------------------------------------- |
+| **Mapbox GL JS**         | Client-side map rendering SDK (free tier: 50k map loads/month) |
+| **Mapbox Elevation API** | Server-side elevation sampling along route paths               |
+| **Mapbox Surface API**   | Server-side surface type composition per segment               |
 
-Mapbox provides all three map-related capabilities under a single provider and free tier. The GL JS SDK runs in the browser and communicates directly with Mapbox tile servers. The Elevation and Surface APIs are called server-side so API keys are never exposed to the client.
+Mapbox provides all three map-related capabilities under a single provider. The GL JS SDK runs in the browser and communicates directly with Mapbox tile servers. The Elevation and Surface APIs are called server-side so API keys are never exposed to the client. **Why Mapbox?** It has a free tier unlike Google's and provides 3D visualizations which Leaflet doesn't.
 
 ---
 
 ## Local Development
 
-| Technology | Purpose |
-|---|---|
-| **Docker** | Containerized local development environment |
+| Technology         | Purpose                                                                 |
+| ------------------ | ----------------------------------------------------------------------- |
+| **Docker**         | Containerized local development environment                             |
 | **Docker Compose** | Runs PostgreSQL, Redis, and Elasticsearch locally with a single command |
 
 Docker eliminates environment inconsistencies between local development and production. A single `docker-compose.yml` at the repo root spins up all required infrastructure locally. This is the standard setup on real engineering teams.
@@ -111,8 +118,8 @@ Docker eliminates environment inconsistencies between local development and prod
 ```yaml
 # docker-compose.yml (overview)
 services:
-  postgres:    # PostgreSQL on port 5432
-  redis:       # Redis on port 6379 (if running locally instead of Upstash)
+  postgres: # PostgreSQL on port 5432
+  redis: # Redis on port 6379 (if running locally instead of Upstash)
   elasticsearch: # Elasticsearch on port 9200
 ```
 
@@ -120,14 +127,14 @@ services:
 
 ## Hosting & Infrastructure
 
-| Service | Purpose | Cost |
-|---|---|---|
-| **Vercel** | Frontend hosting and global CDN | Free (Hobby plan) |
-| **Railway** | Backend service, PostgreSQL, Elasticsearch, and BullMQ workers | ~$5/month |
-| **Upstash** | Managed Redis (cache + queue) | Free (10k commands/day) |
-| **Cloudflare R2** | GPX file blob storage | Free (10GB) |
-| **Mapbox** | Map rendering + elevation + surface APIs | Free (50k map loads/month) |
-| **Total** | | **~$5/month** |
+| Service           | Purpose                                                        | Cost                       |
+| ----------------- | -------------------------------------------------------------- | -------------------------- |
+| **Vercel**        | Frontend hosting and global CDN                                | Free (Hobby plan)          |
+| **Railway**       | Backend service, PostgreSQL, Elasticsearch, and BullMQ workers | ~$5/month                  |
+| **Upstash**       | Managed Redis (cache + queue)                                  | Free (10k commands/day)    |
+| **Cloudflare R2** | GPX file blob storage                                          | Free (10GB)                |
+| **Mapbox**        | Map rendering + elevation + surface APIs                       | Free (50k map loads/month) |
+| **Total**         |                                                                | **~$5/month**              |
 
 ---
 

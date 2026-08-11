@@ -10,6 +10,7 @@
 The app uses Redis (via Upstash in production, Docker locally) as an in-memory data store. Redis serves multiple distinct purposes across the system and the reasoning behind each caching decision needs to be documented explicitly — both to justify the added infrastructure complexity and to prevent future misuse of the cache layer.
 
 The three questions this ADR answers:
+
 1. What data gets cached and why?
 2. What data deliberately does not get cached?
 3. How does cache invalidation work per use case?
@@ -29,6 +30,7 @@ The three questions this ADR answers:
 **TTL:** 1 hour — acts as a safety net expiry. Explicit invalidation (below) is the primary mechanism.
 
 **Invalidation:**
+
 - On `PUT /api/routes/:id` — delete `route:{route_id}` immediately after the DB write succeeds
 - On `DELETE /api/routes/:id` — delete `route:{route_id}` immediately after the DB delete succeeds
 - On worker completion (gpx_file_path update) — delete `route:{route_id}` so the next read reflects the updated GPX path
@@ -44,6 +46,7 @@ The three questions this ADR answers:
 **Why:** JWTs are stateless by design — once issued, a token is valid until it expires and there is no built-in revocation mechanism. Without a blocklist, a logged-out user's token remains valid until natural expiry (up to 1 hour). This is a security gap. Storing invalidated tokens in Redis gives us explicit revocation while keeping auth stateless for normal request flows.
 
 Redis is the right store for this (rather than PostgreSQL) because:
+
 - Lookups happen on every authenticated request and must be fast
 - Entries are inherently temporary — they only need to exist until the token naturally expires
 - Redis TTL handles automatic cleanup with no manual purging needed
@@ -54,6 +57,7 @@ Redis is the right store for this (rather than PostgreSQL) because:
 **TTL:** Set to the exact remaining seconds until the token's `exp` claim — the entry self-destructs when the token would have expired anyway
 
 **Auth middleware flow:**
+
 ```
 Request arrives with JWT
   → Verify JWT signature (cryptographic check)
@@ -70,11 +74,38 @@ Request arrives with JWT
 **What:** BullMQ uses Redis as its underlying storage engine for all job queue data — pending jobs, active jobs, completed jobs, and failed jobs.
 
 **Why:** BullMQ requires Redis as its backend — this is not a discretionary caching choice but a hard dependency of the library. BullMQ stores lightweight job metadata objects (route_id, timestamps, retry counts) in Redis data structures. Redis is appropriate here because job queue data is:
+
 - Temporary by nature — jobs are processed and removed
 - Requires fast read/write for worker polling
 - Does not need the durability guarantees of a relational database
 
 **Relationship to other Redis uses:** All three Redis use cases (route cache, JWT blocklist, BullMQ) run on the same Redis instance (Upstash in production). They are logically isolated by key prefix — `route:*` for cache, `blocklist:*` for JWT invalidation, and BullMQ's own internal key namespace (`bull:*`). There is no conflict between use cases.
+
+**Route creation workflow** -
+
+1. Client sends POST /api/routes with checkpoints + metadata
+2. Backend runs the full atomic transaction:
+   - Calls elevation API → stores samples
+   - Calls surface API → stores segments + surfaces
+   - Computes difficulty, distance, elevation stats
+   - Writes ROUTES row to DB → DB returns the new route with its generated route_id
+   - Writes all child records (checkpoints, segments, etc.)
+   - Transaction commits ✓
+3. Backend takes the route_id from the DB response
+4. Backend enqueues BullMQ job: { route_id: 'abc-123' }
+5. Backend returns 201 to client
+
+Then separately, async:
+
+6. Worker picks up job { route_id: 'abc-123' }
+7. Worker queries DB: SELECT \* FROM routes WHERE id = 'abc-123'
+   JOIN checkpoints, segments, etc.
+8. Worker now has everything it needs to build the GPX file:
+   - Checkpoint coordinates in order
+   - Route name and metadata
+9. Worker generates GPX XML from that data
+10. Worker uploads file to R2
+11. Worker updates ROUTES row: gpx_file_path = 'https://r2.../abc-123.gpx'
 
 ---
 

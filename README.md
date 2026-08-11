@@ -1,13 +1,13 @@
 # 🚴 Cycling App
 
-A free web app for cyclists to create, save, and share riding routes. Built as a full-stack learning project using production-grade technologies and engineering practices.
+A free web app for cyclists to create, save, and download cycling routes as a GPX file to upload to a bike computer (Wahoo, Garmin, etc.). Users can also view other's publicly created routes. Built as a full-stack learning project using production-grade technologies and engineering practices.
 
 ---
 
 ## Project Status
 
-> **Phase 4 — Project Setup**
-> Pre-development documentation complete. Beginning codebase scaffolding.
+> **Phase 5 — Implementation**
+> Coding both frontend and backend features
 
 ---
 
@@ -23,19 +23,19 @@ A free web app for cyclists to create, save, and share riding routes. Built as a
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | React, Vite, TypeScript, Tailwind CSS |
-| State | Zustand (client), TanStack Query (server) |
-| Backend | Node.js, Express, TypeScript |
-| ORM | Prisma |
-| Database | PostgreSQL |
-| Cache + Queue | Redis (Upstash) + BullMQ |
-| Blob Storage | Cloudflare R2 |
-| Maps | Mapbox GL JS |
-| Auth | JWT |
-| Frontend Hosting | Vercel |
-| Backend Hosting | Railway |
+| Layer            | Technology                                |
+| ---------------- | ----------------------------------------- |
+| Frontend         | React, Vite, TypeScript, Tailwind CSS     |
+| State            | Zustand (client), TanStack Query (server) |
+| Backend          | Node.js, Express, TypeScript              |
+| ORM              | Prisma                                    |
+| Database         | PostgreSQL                                |
+| Cache + Queue    | Redis (Upstash) + BullMQ                  |
+| Blob Storage     | Cloudflare R2                             |
+| Maps             | Mapbox GL JS                              |
+| Auth             | JWT                                       |
+| Frontend Hosting | Vercel                                    |
+| Backend Hosting  | Railway                                   |
 
 ---
 
@@ -76,24 +76,28 @@ cycling-app/
 > **Prerequisites:** Node.js 18+, PostgreSQL running locally
 
 ### 1. Clone the repo
+
 ```bash
 git clone https://github.com/AlexFue/cycling-app.git
 cd cycling-app
 ```
 
 ### 2. Install dependencies
+
 ```bash
 # Installs client, server, and shared dependencies together (npm workspaces)
 npm install
 ```
 
 ### 3. Set up environment variables
+
 ```bash
 # In /server, copy the example env file and fill in your values
 cp .env.example .env
 ```
 
 Required variables:
+
 ```
 DATABASE_URL=postgresql://localhost:5432/cycling_app
 JWT_SECRET=your_local_secret
@@ -107,12 +111,14 @@ R2_BUCKET_NAME=cycling-app-gpx
 ```
 
 ### 4. Set up the database
+
 ```bash
 cd server
 npx prisma migrate dev
 ```
 
 ### 5. Start the development servers
+
 ```bash
 # Start the backend (from /server)
 npm run dev
@@ -128,14 +134,14 @@ Backend runs at `http://localhost:3000`
 
 ## Documentation
 
-| Doc | Description |
-|---|---|
-| [PRD](docs/prd.md) | Problem statement, feature list, and non-functional requirements |
-| [API Design](docs/api.md) | All REST endpoints with request/response shapes |
-| [Data Model](docs/erd.md) | ERD, schema decisions, and table descriptions |
-| [Architecture](docs/architecture.md) | System architecture diagram and component breakdown |
-| [Tech Stack](docs/tech-stack.md) | Technology choices with rationale and cost breakdown |
-| [ADRs](docs/decisions/) | Architecture Decision Records for key design choices |
+| Doc                                  | Description                                                      |
+| ------------------------------------ | ---------------------------------------------------------------- |
+| [PRD](docs/prd.md)                   | Problem statement, feature list, and non-functional requirements |
+| [API Design](docs/api.md)            | All REST endpoints with request/response shapes                  |
+| [Data Model](docs/erd.md)            | ERD, schema decisions, and table descriptions                    |
+| [Architecture](docs/architecture.md) | System architecture diagram and component breakdown              |
+| [Tech Stack](docs/tech-stack.md)     | Technology choices with rationale and cost breakdown             |
+| [ADRs](docs/decisions/)              | Architecture Decision Records for key design choices             |
 
 ---
 
