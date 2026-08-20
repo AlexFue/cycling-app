@@ -37,3 +37,8 @@ export interface AuthResponse {
   user: UserResponse
   token: string
 }
+
+// Tags types
+export interface TagResponse {
+  tags: string[]
+}

@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import * as userRoutes from './features/users/users.routes'
 import * as authRoutes from './features/auth/auth.routes'
+import * as tagsRoutes from './features/tags/tags.routes'
 import { verifyServiceConnections } from './lib/verifyConnections'
 import { verifyPrismaConnection } from './lib/prisma'
 import { verifyRedisConnection } from './lib/redis'
@@ -28,6 +29,7 @@ app.get('/health', async (_req, res) => {
 // routes
 app.use('/api/users', userRoutes.default)
 app.use('/api/auth', authRoutes.default)
+app.use('/api/tags', tagsRoutes.default)
 
 // start the server after verifying connections to third party services
 const startServer = async () => {
