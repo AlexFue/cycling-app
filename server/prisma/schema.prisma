@@ -1,5 +1,5 @@
 // Prisma schema for the Cycling App
-// Modeled from docs/api.md response shapes and docs/decisions/ADR-001 through ADR-005
+// Modeled from docs/api.md response shapes and docs/decisions/ADR-001 through ADR-007
 
 generator client {
   provider = "prisma-client"
@@ -66,6 +66,11 @@ model Segment {
   route      Route   @relation(fields: [routeId], references: [id], onDelete: Cascade)
   orderIndex Int     @map("order_index")
   distanceKm Float   @map("distance_km")
+  // Ordered [{ latitude, longitude }] path returned by the Mapbox Directions API between this
+  // segment's two endpoint checkpoints. Persisted rather than recomputed on every read — see ADR-007.
+  // Stored as JSON rather than a child table since it's read/written as one opaque ordered unit,
+  // never queried or filtered point-by-point in SQL — unlike SEGMENT_SURFACES (see ADR-005).
+  geometry   Json    @map("geometry")
 
   surfaces SegmentSurface[]
 

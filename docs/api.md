@@ -201,6 +201,18 @@ None
       "elevation_gain_m": "float",
       "elevation_loss_m": "float",
       "tags": ["string"],
+      "segments": [
+        {
+          "order_index": "int",
+          "distance_km": "float",
+          "geometry": [
+            {
+              "latitude": "float",
+              "longitude": "float"
+            }
+          ]
+        }
+      ],
       "created_at": "timestamp",
       "updated_at": "timestamp"
     }
@@ -265,6 +277,18 @@ None
       "elevation_gain_m": "float",
       "elevation_loss_m": "float",
       "tags": ["string"],
+      "segments": [
+        {
+          "order_index": "int",
+          "distance_km": "float",
+          "geometry": [
+            {
+              "latitude": "float",
+              "longitude": "float"
+            }
+          ]
+        }
+      ],
       "created_at": "timestamp",
       "updated_at": "timestamp"
     }
@@ -328,6 +352,12 @@ None
     {
       "order_index": "int",
       "distance_km": "float",
+      "geometry": [
+        {
+          "latitude": "float",
+          "longitude": "float"
+        }
+      ],
       "surfaces": [
         {
           "surface_type": "string",
@@ -377,6 +407,9 @@ Creates a new route for the authenticated user.
 The backend computes segments, surface types, elevation samples,
 difficulty, distance, and elevation gain/loss from the provided
 checkpoints. The client only sends checkpoints and metadata.
+Each segment's geometry is computed via the Mapbox Directions API
+between its two endpoint checkpoints, not a straight line between
+them — see ADR-007.
 
 **Authorization:** Required
 
@@ -426,6 +459,12 @@ checkpoints. The client only sends checkpoints and metadata.
     {
       "order_index": "int",
       "distance_km": "float",
+      "geometry": [
+        {
+          "latitude": "float",
+          "longitude": "float"
+        }
+      ],
       "surfaces": [
         {
           "surface_type": "string",
@@ -467,7 +506,8 @@ checkpoints. The client only sends checkpoints and metadata.
 Fully replaces an existing route. User must own the route.
 The backend recomputes all derived data (segments, surface types,
 elevation samples, difficulty, distance, elevation gain/loss)
-from the updated checkpoints.
+from the updated checkpoints. As with Create Route, each segment's
+geometry is recomputed via the Mapbox Directions API — see ADR-007.
 
 **Authorization:** Required
 
@@ -520,6 +560,12 @@ from the updated checkpoints.
     {
       "order_index": "int",
       "distance_km": "float",
+      "geometry": [
+        {
+          "latitude": "float",
+          "longitude": "float"
+        }
+      ],
       "surfaces": [
         {
           "surface_type": "string",
