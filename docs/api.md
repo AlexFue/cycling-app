@@ -96,9 +96,11 @@ None
 **Response 200** — OK
 ```json
 {
-  "id": "uuid",
-  "username": "string",
-  "created_at": "timestamp"
+  "user": {
+    "id": "uuid",
+    "username": "string",
+    "created_at": "timestamp"
+  }
 }
 ```
 

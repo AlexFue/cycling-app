@@ -3,11 +3,11 @@ import * as authService from './auth.service'
 import { Prisma, User } from '../../generated/prisma/client'
 import { AuthResponse, loginSchema, UserResponse } from 'shared'
 import { redis } from '../../lib/redis'
-import { AuthErrorResponse } from '../../types/types'
+import { ErrorResponse } from '../../types/types'
 
 export const loginHandler = async (
   req: Request,
-  res: Response<AuthResponse | AuthErrorResponse>
+  res: Response<AuthResponse | ErrorResponse>
 ) => {
   const result = loginSchema.safeParse(req.body)
   if (!result.success) {

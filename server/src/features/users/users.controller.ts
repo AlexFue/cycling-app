@@ -2,8 +2,13 @@ import { Request, Response } from 'express'
 import * as userService from './users.service'
 import * as authService from '../auth/auth.service'
 import { Prisma, User } from '../../generated/prisma/client'
-import { AuthResponse, signUpSchema, UserResponse } from 'shared'
-import { AuthErrorResponse } from '../../types/types'
+import {
+  AuthResponse,
+  signUpSchema,
+  UserProfileResponse,
+  UserResponse,
+} from 'shared'
+import { ErrorResponse, getUserParamsSchema } from '../../types/types'
 
 /**
  * Creates a new user
@@ -14,7 +19,7 @@ import { AuthErrorResponse } from '../../types/types'
  */
 export const createUserHandler = async (
   req: Request,
-  res: Response<AuthResponse | AuthErrorResponse>
+  res: Response<AuthResponse | ErrorResponse>
 ) => {
   const result = signUpSchema.safeParse(req.body)
   if (!result.success) {
@@ -74,5 +79,40 @@ export const createUserHandler = async (
       console.error('Error creating user:', error)
       return res.status(500).json({ error: 'Failed to create user' })
     }
+  }
+}
+
+export const getUserHandler = async (
+  req: Request,
+  res: Response<UserProfileResponse | ErrorResponse>
+) => {
+  const result = getUserParamsSchema.safeParse(req.params)
+  if (!result.success) {
+    return res.status(400).json({ error: result.error.issues[0].message })
+  }
+
+  const { id } = result.data
+
+  try {
+    const user = await userService.getUserById(id)
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
+    const userResponse: UserResponse = {
+      id: user.id,
+      username: user.username,
+      createdAt: user.createdAt,
+    }
+
+    return res.status(200).json({ user: userResponse })
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientInitializationError) {
+      console.error('Database unreachable:', error)
+      return res.status(503).json({ error: 'Service temporarily unavailable' })
+    }
+    console.error('Error fetching user:', error)
+    return res.status(500).json({ error: 'Failed to fetch user' })
   }
 }
